@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // bcrypt hash
+const UserSchema = new Schema({
+  email: { type: String, unique: true },
+  password: String, // bcrypt hash
   role: { type: String, enum: ['Admin','Member'], default: 'Member' },
-  tenant: { type: String, required: true },   // tenant slug
+  tenant: String, // tenant slug
   createdAt: { type: Date, default: Date.now }
 });
 
