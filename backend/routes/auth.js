@@ -23,24 +23,96 @@ router.post("/signup", async (req, res) => {
 
     const newUser = await User.create({ name, email, password: hashedPassword });
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    res.status(201).json({
+const token = jwt.sign(
+  { 
+    id: newUser._id,
+    userId: newUser._id,  // Add this - needed by notes routes
+    tenant: newUser.tenant,  // Add this - needed by middleware
+    role: newUser.role  // Add this - needed by tenant routes
+  }, 
+  process.env.JWT_SECRET, 
+  { expiresIn: "1h" }
+);
+res.json({
   token,
   user: {
     id: newUser._id,
     name: newUser.name,
     email: newUser.email,
     tenant: newUser.tenant,
-    role: newUser.role
+    role: newUser.role,
   },
 });
 
   } catch (err) {
     console.error("Signup error:", err);  // <-- Add this line to see the exact error
     res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// Login route
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        userId: user._id,
+        tenant: user.tenant,
+        role: user.role 
+      }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        tenant: user.tenant,
+        role: user.role
+      },
+    });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+router.get("/verify", async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = auth.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    res.json({ user });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 });
 

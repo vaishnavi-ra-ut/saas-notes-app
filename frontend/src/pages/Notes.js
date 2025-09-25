@@ -1,13 +1,14 @@
     import React, { useState, useEffect } from 'react';
+    import { useAuth } from "../contexts/AuthContext";
 import axios from 'axios';
 import NoteItem from '../components/NoteItem';
 import NoteForm from '../components/NoteForm';
 
 export default function Notes() {
-  const token = localStorage.getItem('token');
+  const { user, token } = useAuth();
   const [notes, setNotes] = useState([]);
-  const [tenantPlan, setTenantPlan] = useState('free');
-
+  const [tenantPlan, setTenantPlan] = useState(user?.tenantPlan || 'free');
+  if (!token) return <div>Please log in to view notes.</div>;
   const fetchNotes = async () => {
     const res = await axios.get(`${process.env.REACT_APP_API}/notes`, { headers: { Authorization: `Bearer ${token}` } });
     setNotes(res.data);
