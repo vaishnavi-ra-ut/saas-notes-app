@@ -23,17 +23,22 @@ router.post("/signup", async (req, res) => {
 
     const newUser = await User.create({ name, email, password: hashedPassword });
 
-const token = jwt.sign(
-  { 
-    id: newUser._id,
-    userId: newUser._id,  // Add this - needed by notes routes
-    tenant: newUser.tenant,  // Add this - needed by middleware
-    role: newUser.role  // Add this - needed by tenant routes
-  }, 
-  process.env.JWT_SECRET, 
-  { expiresIn: "1h" }
-);
+
+    const token = jwt.sign(
+      { 
+        id: newUser._id,
+        userId: newUser._id,
+        tenant: newUser.tenant,
+        role: newUser.role 
+      }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: "1h" }
+    );
+
+    res.status(201).json({
+
 res.json({
+
   token,
   user: {
     id: newUser._id,
@@ -71,7 +76,11 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { 
+
+        id: user._id,
+
         id: user._id, 
+
         userId: user._id,
         tenant: user.tenant,
         role: user.role 
@@ -97,6 +106,8 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
+
 router.get("/verify", async (req, res) => {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
@@ -115,5 +126,6 @@ router.get("/verify", async (req, res) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 });
+
 
 module.exports = router;
