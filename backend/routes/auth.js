@@ -1,7 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const User = require("../models/User"); // make sure path is correct
+const User = require("../models/User"); // ensure path is correct
 
 const router = express.Router();
 
@@ -21,36 +21,35 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({ name, email, password: hashedPassword });
-
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
 
     const token = jwt.sign(
-      { 
+      {
         id: newUser._id,
         userId: newUser._id,
         tenant: newUser.tenant,
-        role: newUser.role 
-      }, 
-      process.env.JWT_SECRET, 
+        role: newUser.role,
+      },
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     res.status(201).json({
-
-res.json({
-
-  token,
-  user: {
-    id: newUser._id,
-    name: newUser.name,
-    email: newUser.email,
-    tenant: newUser.tenant,
-    role: newUser.role,
-  },
-});
-
+      token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        tenant: newUser.tenant,
+        role: newUser.role,
+      },
+    });
   } catch (err) {
-    console.error("Signup error:", err);  // <-- Add this line to see the exact error
+    console.error("Signup error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
@@ -75,17 +74,13 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { 
-
+      {
         id: user._id,
-
-        id: user._id, 
-
         userId: user._id,
         tenant: user.tenant,
-        role: user.role 
-      }, 
-      process.env.JWT_SECRET, 
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
@@ -96,36 +91,34 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         tenant: user.tenant,
-        role: user.role
+        role: user.role,
       },
     });
-
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-
-
+// Verify route
 router.get("/verify", async (req, res) => {
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "No token provided" });
   }
 
-  const token = auth.split(' ')[1];
+  const token = auth.split(" ")[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(401).json({ error: "User not found" });
     }
     res.json({ user });
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    console.error("Verify error:", err);
+    return res.status(401).json({ error: "Invalid token" });
   }
 });
-
 
 module.exports = router;
