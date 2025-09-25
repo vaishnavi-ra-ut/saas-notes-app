@@ -23,6 +23,7 @@ router.post("/signup", async (req, res) => {
 
     const newUser = await User.create({ name, email, password: hashedPassword });
 
+
     const token = jwt.sign(
       { 
         id: newUser._id,
@@ -35,13 +36,16 @@ router.post("/signup", async (req, res) => {
     );
 
     res.status(201).json({
+
+res.json({
+
   token,
   user: {
     id: newUser._id,
     name: newUser.name,
     email: newUser.email,
     tenant: newUser.tenant,
-    role: newUser.role
+    role: newUser.role,
   },
 });
 
@@ -72,7 +76,11 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { 
+
         id: user._id,
+
+        id: user._id, 
+
         userId: user._id,
         tenant: user.tenant,
         role: user.role 
@@ -97,5 +105,27 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ msg: "Server error" });
   }
 });
+
+
+
+router.get("/verify", async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = auth.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    res.json({ user });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 
 module.exports = router;
