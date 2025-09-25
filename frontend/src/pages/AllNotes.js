@@ -41,7 +41,7 @@ export default function AllNotes() {
             </div>
 
             <div className="row-actions">
-              <Link to={`/notes/${n._1d}?id=${n._id}`} className="link">Open</Link>
+              <Link to={`/notes/${n._id}`} className="link">Open</Link>
               <Link to={`/notes/${n._id}`} className="btn ghost small">Edit</Link>
               <button className="btn subtle small" onClick={() => handleDelete(n._id)}>Delete</button>
             </div>
